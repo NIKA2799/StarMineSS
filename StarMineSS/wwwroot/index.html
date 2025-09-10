@@ -182,9 +182,10 @@
         /* BOARD */
         .boardWrap {
             margin-top: 12px;
-            padding: 12px
+            padding: 12px;
+            overflow: hidden
         }
-
+        /* <- ჩაჭრა გარედანაც */
         .board {
             --cols: 5;
             display: grid;
@@ -197,7 +198,9 @@
             padding: 12px;
             border: 1px solid #153a85;
             box-shadow: inset 0 12px 30px rgba(0,0,0,.35);
-            overflow: hidden;
+            overflow: hidden; /* შიგნითაც ჩაჭრა */
+            clip-path: inset(0 round 20px); /* მრგვალი კუთხით ჭრა */
+            contain: layout paint; /* subpixel bleed fix */
             backface-visibility: hidden;
             transform: translateZ(0);
         }
@@ -285,7 +288,7 @@
                 font-weight: 800
             }
 
-        /* ==== Frameless/Flat მობილურზე (<=480px) ==== */
+        /* Frameless/Flat mobile */
         @media (max-width:480px) {
             :root {
                 --gap: 6px
@@ -300,7 +303,6 @@
                 padding: 10px
             }
 
-            /* ჩარჩო/ჩრდილი მოვხსნათ პანელებს */
             .panel {
                 background: transparent;
                 border: 0;
@@ -321,15 +323,13 @@
                 box-shadow: none
             }
 
-            /* უჯრები – მსუბუქი, ბრტყელი */
             .cell {
                 border: 0;
                 box-shadow: 0 6px 12px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.06);
                 border-radius: 12px;
-                font-size: 22px;
+                font-size: 22px
             }
 
-            /* ჩიფები/ტოგლები – რბილი */
             .chip, .pill, .toggle {
                 background: rgba(10,43,105,.65);
                 border: 1px solid rgba(255,255,255,.14)
@@ -480,7 +480,7 @@
             } catch (e) { console.error(e); }
         }
 
-        function render(pop = false) {
+        function render() {
             const board = document.getElementById('board');
             board.style.setProperty('--cols', state.cols);
             board.innerHTML = '';
@@ -514,6 +514,11 @@
         }
         function hideOverlay() { document.getElementById('overlay').classList.remove('show'); }
         function dismissOverlay() { hideOverlay(); }
+
+        // Re-render on resize/orientation to avoid tiny overflow on WebViews
+        const reflow = () => { const b = document.getElementById('board'); b && (b.style.transform = 'translateZ(0)'); if (state) render(); };
+        window.addEventListener('resize', () => setTimeout(reflow, 50), { passive: true });
+        window.addEventListener('orientationchange', () => setTimeout(reflow, 150), { passive: true });
 
         // first load
         syncBadges(); newGame();
