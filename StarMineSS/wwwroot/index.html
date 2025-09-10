@@ -1,10 +1,10 @@
 ﻿<!doctype html>
 <html lang="ka">
 <head>
-    <meta charset="utf-8" />
+  <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>Stars vs Bombs</title>
-    <style>
+  <title>Stars vs Bombs</title>
+  <style>
         :root {
             --bg: #061731;
             --grad1: #0c2a68;
@@ -40,20 +40,23 @@
         button {
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent
-        }
+    }
 
         .wrap {
             max-width: 1100px;
             margin: 20px auto;
             padding: 0 12px
-        }
+    }
+    .wrap{max-width:1100px;margin:34px auto;padding:0 18px}
 
         .head {
             display: flex;
             align-items: center;
             gap: 12px;
             margin-bottom: 10px
-        }
+    }
+    .title{font-weight:900;font-size:24px}
+    .subtitle{color:var(--muted);font-weight:600}
 
         .badgeBrand {
             width: 36px;
@@ -264,17 +267,20 @@
             .modal.win {
                 background: linear-gradient(135deg,rgba(16,185,129,.95),rgba(34,197,94,.95));
                 color: #052d1a
-            }
+    }
 
             .modal.lose {
                 background: linear-gradient(135deg,rgba(239,68,68,.96),rgba(185,28,28,.96));
                 color: #2a0c0c
-            }
+    }
 
             .modal h3 {
                 margin: 0 0 8px;
                 font-size: 22px
-            }
+    }
+    .pill.active{background:linear-gradient(135deg,#41e0ff,#2aa0ff);color:#02122b}
+    .toggle{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;border:1px solid #174090;background:#0a2b69;color:#cfe8ff;font-weight:700}
+    .toggle input{accent-color:#2aa0ff}
 
             .modal p {
                 margin: 0 0 12px;
@@ -285,85 +291,87 @@
         @media (max-width:480px) {
             :root {
                 --gap: 8px
-            }
+    }
 
             .wrap {
                 padding: 0 10px
-            }
+    }
 
             .controls {
                 gap: 6px;
                 padding: 10px
-            }
+    }
 
             .boardWrap {
                 padding: 10px
-            }
+    }
+    .dim{opacity:.65;filter:grayscale(.3)}
+    @media (max-width:640px){.right{margin-left:0}}
 
             .cell {
                 font-size: 24px;
                 border-radius: 12px
             }
         }
-    </style>
+  </style>
 </head>
 <body>
-    <div class="wrap">
-        <div class="head">
-            <div class="badgeBrand">⭐</div>
-            <div>
-                <div class="title">Stars vs Bombs</div>
-                <div class="subtitle">გახსენი ვარსკვლავები — მოერიდე ბომბებს</div>
-            </div>
-        </div>
+  <div class="wrap">
+    <div class="head">
+      <div class="badgeBrand">⭐</div>
+      <div>
+        <div class="title">Stars vs Bombs</div>
+        <div class="subtitle">გახსენი ვარსკვლავები — მოერიდე ბომბებს</div>
+      </div>
+    </div>
 
-        <div class="panel controls">
-            <div class="chip">Rows <input id="rows" type="number" min="2" max="12" value="5"></div>
-            <div class="chip">Cols <input id="cols" type="number" min="2" max="12" value="5"></div>
-            <div class="chip">Mines <input id="mines" type="number" min="1" value="3"></div>
+    <div class="panel controls">
+      <div class="chip">Rows <input id="rows" type="number" min="2" max="12" value="5"></div>
+      <div class="chip">Cols <input id="cols" type="number" min="2" max="12" value="5"></div>
+      <div class="chip">Mines <input id="mines" type="number" min="1" value="3"></div>
 
-            <button class="pill" data-preset="easy">Easy</button>
-            <button class="pill" data-preset="medium">Medium</button>
-            <button class="pill" data-preset="hard">Hard</button>
+      <button class="pill" data-preset="easy">Easy</button>
+      <button class="pill" data-preset="medium">Medium</button>
+      <button class="pill" data-preset="hard">Hard</button>
 
-            <button id="btnNew" class="btn">New Game</button>
+      <button id="btnNew" class="btn">New Game</button>
 
-            <div class="right">
+      <div class="right">
                 <div class="chip" id="sizeBadge">Size: 5×5</div>
                 <div class="chip" id="minesBadge">Mines: 3</div>
                 <div class="chip" id="safeBadge">Safe: 0 / 22</div>
-                <label class="toggle"><input id="mute" type="checkbox">🔇 Mute</label>
-                <label class="toggle">🔊 Vol <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" style="width:100px"></label>
-            </div>
-        </div>
-
-        <div class="status" id="status">Open the stars — avoid the bombs.</div>
-        <div class="progress panel" style="margin-bottom:8px"><div id="progress"></div></div>
-
-        <div class="panel boardWrap">
-            <div id="board" class="board"></div>
-        </div>
+        <label class="toggle"><input id="mute" type="checkbox">🔇 Mute</label>
+        <label class="toggle">🔊 Vol <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" style="width:100px"></label>
+      </div>
     </div>
 
-    <div id="overlay" class="overlay">
-        <div id="modal" class="modal">
-            <h3 id="modalTitle"></h3>
-            <p id="modalText"></p>
-            <button class="btn" onclick="dismissOverlay();newGame()">Play Again</button>
-        </div>
-    </div>
+    <div class="status" id="status">Open the stars — avoid the bombs.</div>
+    <div class="progress panel" style="margin-bottom:8px"><div id="progress"></div></div>
 
-    <script>
+    <div class="panel boardWrap">
+      <div id="board" class="board"></div>
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay">
+    <div id="modal" class="modal">
+      <h3 id="modalTitle"></h3>
+      <p id="modalText"></p>
+      <button class="btn" onclick="dismissOverlay();newGame()">Play Again</button>
+    </div>
+  </div>
+
+  <script>
         // ---------- AUDIO ----------
-        let audio, gain, unlocked = false;
-        function ensureAudio() {
-            if (unlocked) return;
-            audio = new (window.AudioContext || window.webkitAudioContext)();
+    let audio, gain, unlocked = false;
+    function ensureAudio() {
+      if (unlocked) return;
+      audio = new (window.AudioContext || window.webkitAudioContext)();
             audio.resume && audio.resume();
-            gain = audio.createGain(); gain.gain.value = parseFloat(document.getElementById('vol').value || '0.8');
-            gain.connect(audio.destination);
-            unlocked = true;
-        }
+      gain = audio.createGain(); gain.gain.value = parseFloat(document.getElementById('vol').value || '0.8');
+      gain.connect(audio.destination);
+      unlocked = true;
+    }
         function setVolume(v) { if (gain) gain.gain.value = v; }
         function isMuted() { return document.getElementById('mute').checked; }
         document.body.addEventListener('pointerdown', () => ensureAudio(), { once: true });
@@ -376,7 +384,7 @@
             o.type = "triangle"; o.frequency.setValueAtTime(880, now); o.frequency.exponentialRampToValueAtTime(1320, now + .08);
             g.gain.setValueAtTime(.0001, now); g.gain.exponentialRampToValueAtTime(.4, now + .01); g.gain.exponentialRampToValueAtTime(.0001, now + .35);
             o.connect(g); g.connect(gain); o.start(now); o.stop(now + .4);
-        }
+    }
         function playBomb() {
             if (isMuted() || !unlocked) return;
             const now = audio.currentTime;
@@ -390,23 +398,24 @@
             const nGain = audio.createGain(); nGain.gain.value = .35; nGain.gain.exponentialRampToValueAtTime(.0001, now + .5);
             const lp = audio.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 500;
             noise.connect(lp); lp.connect(nGain); nGain.connect(gain); noise.start(now); noise.stop(now + .5);
-        }
+    }
+    function isMuted(){ return document.getElementById('mute').checked; }
 
-        // ---------- GAME ----------
-        let state = null;
+    // ---------- GAME ----------
+    let state = null;
         const rowsEl = document.getElementById('rows'), colsEl = document.getElementById('cols'), minesEl = document.getElementById('mines');
 
-        // Difficulty pills
+    // Difficulty pills
         [...document.querySelectorAll('.pill')].forEach(p => {
             p.addEventListener('click', () => {
                 [...document.querySelectorAll('.pill')].forEach(x => x.classList.remove('active'));
-                p.classList.add('active');
+        p.classList.add('active');
                 if (p.dataset.preset === 'easy') { rowsEl.value = 5; colsEl.value = 5; minesEl.value = 3; }
                 if (p.dataset.preset === 'medium') { rowsEl.value = 6; colsEl.value = 6; minesEl.value = 6; }
                 if (p.dataset.preset === 'hard') { rowsEl.value = 8; colsEl.value = 8; minesEl.value = 10; }
-                newGame();
-            });
-        });
+        newGame();
+      });
+    });
 
         function syncBadges() {
             const rows = +rowsEl.value || 5, cols = +colsEl.value || 5;
@@ -415,20 +424,20 @@
             if (+minesEl.value < 1) minesEl.value = 1;
             document.getElementById('sizeBadge').textContent = `Size: ${rows}×${cols}`;
             document.getElementById('minesBadge').textContent = `Mines: ${minesEl.value}`;
-        }
+    }
         ['input', 'change'].forEach(evt => [rowsEl, colsEl, minesEl].forEach(el => el.addEventListener(evt, syncBadges)));
         document.getElementById('btnNew').addEventListener('click', () => newGame());
 
         async function newGame() {
             try {
-                syncBadges();
+        syncBadges();
                 const rows = +rowsEl.value || 5, cols = +colsEl.value || 5, mines = Math.min(+minesEl.value || 3, rows * cols - 1);
                 const res = await fetch(`/api/game/new?rows=${rows}&cols=${cols}&mines=${mines}`, { method: 'POST' });
                 if (!res.ok) throw new Error(await res.text());
                 state = await res.json();
-                hideOverlay(); render();
+        hideOverlay(); render();
             } catch (e) { console.error(e); document.getElementById('status').textContent = 'Failed to start game. Check API.'; }
-        }
+    }
 
         async function reveal(r, c) {
             if (!state || state.gameOver) return;
@@ -437,9 +446,9 @@
                 if (!res.ok) throw new Error(await res.text());
                 state = await res.json();
                 const t = state.board[r][c]; if (t === 'bomb') playBomb(); else playStar();
-                render(true);
+        render(true);
             } catch (e) { console.error(e); }
-        }
+    }
 
         function render(pop = false) {
             const board = document.getElementById('board');
@@ -452,9 +461,9 @@
                     el.textContent = t === 'hidden' ? '' : (t === 'bomb' ? '💣' : '⭐');
                     if (t === 'hidden' && !state.gameOver) el.addEventListener('click', () => reveal(r, c));
                     else el.disabled = true;
-                    board.appendChild(el);
-                }
-            }
+          board.appendChild(el);
+        }
+      }
             const openSafe = state.board.flat().filter(x => x === 'star').length;
             const totalSafe = state.rows * state.cols - state.mines;
             document.getElementById('safeBadge').textContent = `Safe: ${openSafe} / ${totalSafe}`;
@@ -465,19 +474,20 @@
                 if (state.won) { st.textContent = '✅ You Win!'; showOverlay(true, 'You Win!', `გაიმარჯვე — ${openSafe}/${totalSafe}`); }
                 else { st.textContent = '❌ Boom! You lost.'; showOverlay(false, 'Boom!', 'ბომბს დააჭირე. ისევ ვცადოთ?'); }
             } else st.textContent = 'Open the stars — avoid the bombs.';
-        }
+    }
 
         function showOverlay(win, title, text) {
             const o = document.getElementById('overlay'), m = document.getElementById('modal');
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalText').textContent = text;
             m.className = `modal ${win ? 'win' : 'lose'}`; o.classList.add('show');
-        }
+    }
         function hideOverlay() { document.getElementById('overlay').classList.remove('show'); }
         function dismissOverlay() { hideOverlay(); }
 
-        // first load
-        syncBadges(); newGame();
-    </script>
+    // first load
+    syncBadges(); newGame();
+  </script>
 </body>
 </html>
+
