@@ -38,6 +38,14 @@ app.MapPost("/api/game/new", (int rows, int cols, int mines, GameStore store) =>
     store.Save(g);
     return Results.Json(g.ToClient());
 });
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx => {
+        ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+        ctx.Context.Response.Headers["Pragma"] = "no-cache";
+        ctx.Context.Response.Headers["Expires"] = "0";
+    }
+});
 
 // უჯრის გახსნა
 app.MapPost("/api/game/{id:guid}/reveal", (Guid id, int r, int c, GameStore store) =>
@@ -48,6 +56,14 @@ app.MapPost("/api/game/{id:guid}/reveal", (Guid id, int r, int c, GameStore stor
     g.Reveal(r, c);
     store.Save(g);
     return Results.Json(g.ToClient());
+    app.UseStaticFiles(new StaticFileOptions {
+    OnPrepareResponse = ctx => {
+        ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+        ctx.Context.Response.Headers["Pragma"] = "no-cache";
+        ctx.Context.Response.Headers["Expires"] = "0";
+    }
+});
+
 });
 
 // ნებისმიერი უცნობი GET გზა დააბრუნოს index.html (SPA fallback)
