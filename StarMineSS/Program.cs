@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Caching.Memory;
 using StarMineSS.Model;
 using StarMineSS.Service;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Extensions.Caching.Memory;
+
 var builder = WebApplication.CreateBuilder(args);
-//builder.Host.UseWindowsService();
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
@@ -15,18 +15,28 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
 
 var app = builder.Build();
 
-// თუ ოდესმე რევერს-პროქსის მიღმა გექნება (IIS/Nginx), ეს დაგჭრდება:
+// თუ ოდესმე რევერს-პროქსის მიღმა გექნება (IIS/Nginx)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
 app.UseCors();
+
 app.UseDefaultFiles(new DefaultFilesOptions
 {
     DefaultFileNames = new List<string> { "index.html" }
 });
-app.UseStaticFiles();
+
+// Static Files ერთხელ რეგისტრირდება Cache-Control ჰედერებით
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx => {
+        ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+        ctx.Context.Response.Headers["Pragma"] = "no-cache";
+        ctx.Context.Response.Headers["Expires"] = "0";
+    }
+});
 
 // სწრაფი ჯანმრთელობის ტესტი
 app.MapGet("/api/ping", () => Results.Ok(new { ok = true, env = app.Environment.EnvironmentName }));
@@ -38,14 +48,6 @@ app.MapPost("/api/game/new", (int rows, int cols, int mines, GameStore store) =>
     store.Save(g);
     return Results.Json(g.ToClient());
 });
-app.UseStaticFiles(new StaticFileOptions
-{
-    OnPrepareResponse = ctx => {
-        ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-        ctx.Context.Response.Headers["Pragma"] = "no-cache";
-        ctx.Context.Response.Headers["Expires"] = "0";
-    }
-});
 
 // უჯრის გახსნა
 app.MapPost("/api/game/{id:guid}/reveal", (Guid id, int r, int c, GameStore store) =>
@@ -56,14 +58,6 @@ app.MapPost("/api/game/{id:guid}/reveal", (Guid id, int r, int c, GameStore stor
     g.Reveal(r, c);
     store.Save(g);
     return Results.Json(g.ToClient());
-    app.UseStaticFiles(new StaticFileOptions {
-    OnPrepareResponse = ctx => {
-        ctx.Context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-        ctx.Context.Response.Headers["Pragma"] = "no-cache";
-        ctx.Context.Response.Headers["Expires"] = "0";
-    }
-});
-
 });
 
 // ნებისმიერი უცნობი GET გზა დააბრუნოს index.html (SPA fallback)

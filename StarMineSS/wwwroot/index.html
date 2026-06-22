@@ -1,4 +1,4 @@
-﻿<!--<!doctype html>
+﻿<!doctype html>
 <html lang="ka">
 <head>
     <meta charset="utf-8" />
@@ -363,11 +363,13 @@
             <div class="chip">Rows <input id="rows" type="number" min="2" max="12" value="5"></div>
             <div class="chip">Cols <input id="cols" type="number" min="2" max="12" value="5"></div>
             <div class="chip">Mines <input id="mines" type="number" min="1" value="3"></div>
-
+            <div class="chip" style="background: #113a80; border-color: #2aa0ff; margin-left: 10px;">
+                🤖 ავტო კლიკი: <input id="autoClicks" type="number" min="1" max="50" value="8" style="width: 40px;">
+            </div>
             <button class="pill" data-preset="easy">Easy</button>
             <button class="pill" data-preset="medium">Medium</button>
             <button class="pill" data-preset="hard">Hard</button>
-
+            <button id="btnAutoPlay" class="btn" style="background: linear-gradient(135deg, #e041ff, #8a2aff); box-shadow: 0 10px 18px rgba(224, 65, 255, 0.35);">▶ Auto Play</button>
             <button id="btnNew" class="btn">New Game</button>
 
             <div class="right">
@@ -391,7 +393,7 @@
         <div id="modal" class="modal">
             <h3 id="modalTitle"></h3>
             <p id="modalText"></p>
-            <button class="btn" onclick="dismissOverlay();newGame()">Play Again</button>
+            <button class="btn" id="btnOverlayPlayAgain">Play Again</button>
         </div>
     </div>
 
@@ -443,6 +445,8 @@
                 if (p.dataset.preset === 'easy') { rowsEl.value = 5; colsEl.value = 5; minesEl.value = 3; }
                 if (p.dataset.preset === 'medium') { rowsEl.value = 6; colsEl.value = 6; minesEl.value = 6; }
                 if (p.dataset.preset === 'hard') { rowsEl.value = 8; colsEl.value = 8; minesEl.value = 10; }
+
+                autoPlayActive = false; // ვაჩერებთ ბოტს თუ რეჟიმს ვცვლით
                 newGame();
             });
         });
@@ -456,7 +460,17 @@
             document.getElementById('minesBadge').textContent = `Mines: ${minesEl.value}`;
         }
         ['input', 'change'].forEach(evt => [rowsEl, colsEl, minesEl].forEach(el => el.addEventListener(evt, syncBadges)));
-        document.getElementById('btnNew').addEventListener('click', () => newGame());
+
+        document.getElementById('btnNew').addEventListener('click', () => {
+            autoPlayActive = false; // ავტო-კლიკის გაჩერება ხელით დაწყებისას
+            newGame();
+        });
+
+        document.getElementById('btnOverlayPlayAgain').addEventListener('click', () => {
+            autoPlayActive = false; // ავტო-კლიკის გაჩერება ხელით დაწყებისას
+            dismissOverlay();
+            newGame();
+        });
 
         async function newGame() {
             try {
@@ -489,7 +503,10 @@
                     const t = state.board[r][c], el = document.createElement('button');
                     el.className = `cell ${t}${t !== 'hidden' ? ' revealed' : ''}`;
                     el.textContent = t === 'hidden' ? '' : (t === 'bomb' ? '💣' : '⭐');
-                    if (t === 'hidden' && !state.gameOver) el.addEventListener('click', () => reveal(r, c));
+                    if (t === 'hidden' && !state.gameOver) el.addEventListener('click', () => {
+                        autoPlayActive = false; // ხელით კლიკისას ბოტი ჩერდება
+                        reveal(r, c);
+                    });
                     else el.disabled = true;
                     board.appendChild(el);
                 }
@@ -520,8 +537,71 @@
         window.addEventListener('resize', () => setTimeout(reflow, 50), { passive: true });
         window.addEventListener('orientationchange', () => setTimeout(reflow, 150), { passive: true });
 
+        // ---------- AUTO PLAYER (NPC) ----------
+        let autoPlayActive = false;
+        let autoPlayTarget = 0;
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        document.getElementById('btnAutoPlay').addEventListener('click', async () => {
+            if (autoPlayActive) return; // თუ უკვე ჩართულია
+
+            // თუ თამაში უკვე მორჩენილია, ახლიდან დაიწყოს
+            if (state && state.gameOver) {
+                await newGame();
+                await delay(500);
+            }
+
+            autoPlayActive = true;
+            autoPlayTarget = parseInt(document.getElementById('autoClicks').value) || 8;
+            await runAutoPlay(0);
+        });
+
+        async function runAutoPlay(clicksDone) {
+            // თუ ხელით გავაჩერეთ ან მიზანს მივაღწიეთ
+            if (!autoPlayActive || clicksDone >= autoPlayTarget) {
+                autoPlayActive = false;
+                return;
+            }
+
+            // მოვძებნოთ გაუხსნელი უჯრები
+            const hiddenCells = [];
+            for (let r = 0; r < state.rows; r++) {
+                for (let c = 0; c < state.cols; c++) {
+                    if (state.board[r][c] === 'hidden') {
+                        hiddenCells.push({ r, c });
+                    }
+                }
+            }
+
+            if (hiddenCells.length === 0) {
+                autoPlayActive = false;
+                return;
+            }
+
+            // შემთხვევითი არჩევანი
+            const randomIndex = Math.floor(Math.random() * hiddenCells.length);
+            const cell = hiddenCells[randomIndex];
+
+            await reveal(cell.r, cell.c);
+            await delay(600); // დაყოვნება კლიკებს შორის ეფექტისთვის
+
+            // შემოწმება კლიკის მერე
+            if (state.gameOver) {
+                if (!state.won) {
+                    await delay(1200); // ვყოვნდებით რომ დავინახოთ წაგება
+                    await newGame();   // ვხსნით ახალს
+                    await delay(500);  // ველოდებით ჩატვირთვას
+                    await runAutoPlay(0); // 🔄 ვიწყებთ 0-დან!
+                } else {
+                    autoPlayActive = false; // მოვიგეთ
+                }
+            } else {
+                await runAutoPlay(clicksDone + 1); // უსაფრთხოა, შემდეგი კლიკი
+            }
+        }
+
         // first load
         syncBadges(); newGame();
     </script>
 </body>
-</html>-->
+</html>
