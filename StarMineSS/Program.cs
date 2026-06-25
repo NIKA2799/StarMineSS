@@ -44,34 +44,13 @@ app.UseStaticFiles(new StaticFileOptions
 // 👇 2. ვააქტიურებთ კონტროლერების მარშრუტებს
 app.MapControllers();
 
-// ------------------------------------------------------------------
-// ეს ძველი Minimal API-ები დროებით რჩება, რომ დღეს თამაშმა იმუშაოს.
-// ხვალ, როცა Controllers-ში გადაიტან ამ ლოგიკას, ამ ხაზებს წავშლით!
-// ------------------------------------------------------------------
-
-// სწრაფი ჯანმრთელობის ტესტი
-app.MapGet("/api/ping", () => Results.Ok(new { ok = true, env = app.Environment.EnvironmentName }));
-
-// ახალი თამაშის შექმნა
-app.MapPost("/api/game/new", (int rows, int cols, int mines, GameStore store) =>
-{
-    var g = GameState.Create(rows, cols, mines);
-    store.Save(g);
-    return Results.Json(g.ToClient());
-});
-
-// უჯრის გახსნა
-app.MapPost("/api/game/{id:guid}/reveal", (Guid id, int r, int c, GameStore store) =>
-{
-    var g = store.Get(id);
-    if (g is null) return Results.NotFound(new { error = "not_found" });
-
-    g.Reveal(r, c);
-    store.Save(g);
-    return Results.Json(g.ToClient());
-});
-
 // ნებისმიერი უცნობი GET გზა დააბრუნოს index.html (SPA fallback)
-app.MapFallbackToFile("index.html");
+app.UseCors();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.MapControllers(); // ეს აკეთებს ყველაფერს!
+
+app.MapFallbackToFile("index.html"); // ეს რჩება SPA-სთვის
 
 app.Run();
