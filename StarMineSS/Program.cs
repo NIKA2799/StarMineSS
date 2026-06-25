@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
+// 👇 1. ვამატებთ კონტროლერების მხარდაჭერას ხვალინდელი დღისთვის
+builder.Services.AddControllers();
+
 builder.Services.AddMemoryCache(o => o.SizeLimit = 1024);
 builder.Services.AddSingleton<GameStore>();
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
@@ -37,6 +40,14 @@ app.UseStaticFiles(new StaticFileOptions
         ctx.Context.Response.Headers["Expires"] = "0";
     }
 });
+
+// 👇 2. ვააქტიურებთ კონტროლერების მარშრუტებს
+app.MapControllers();
+
+// ------------------------------------------------------------------
+// ეს ძველი Minimal API-ები დროებით რჩება, რომ დღეს თამაშმა იმუშაოს.
+// ხვალ, როცა Controllers-ში გადაიტან ამ ლოგიკას, ამ ხაზებს წავშლით!
+// ------------------------------------------------------------------
 
 // სწრაფი ჯანმრთელობის ტესტი
 app.MapGet("/api/ping", () => Results.Ok(new { ok = true, env = app.Environment.EnvironmentName }));
