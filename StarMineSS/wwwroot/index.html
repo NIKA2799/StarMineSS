@@ -288,7 +288,6 @@
                 font-weight: 800
             }
 
-        /* Frameless/Flat mobile */
         @media (max-width:480px) {
             :root {
                 --gap: 6px
@@ -431,34 +430,20 @@
         // TAB SWITCHER LOGIC
         // ==============================================
         function switchGame(gameId, buttonElement) {
-            // გავაჩეროთ ავტო-ბოტი, თუ პირველ თამაშში ჩართული იყო
-            if (typeof autoPlayActive !== 'undefined') {
-                autoPlayActive = false;
-            }
-
-            // დავმალოთ ყველა ეკრანი
-            document.querySelectorAll('.game-screen').forEach(screen => {
-                screen.style.display = 'none';
-            });
-
-            // გამოვაჩინოთ მხოლოდ არჩეული
+            if (typeof autoPlayActive !== 'undefined') autoPlayActive = false;
+            document.querySelectorAll('.game-screen').forEach(screen => screen.style.display = 'none');
             document.getElementById(`game-${gameId}`).style.display = 'block';
 
-            // გავანახლოთ ღილაკების დიზაინი (აქტიური/არააქტიური)
             document.querySelectorAll('.game-selector .pill').forEach(btn => {
                 btn.classList.remove('active');
                 btn.style.background = '#0a2b69';
                 btn.style.color = '#cfe8ff';
             });
-
             buttonElement.classList.add('active');
             buttonElement.style.background = 'linear-gradient(135deg, #41e0ff, #2aa0ff)';
             buttonElement.style.color = '#02122b';
 
-            // თუ Tic-Tac-Toe ავირჩიეთ და ჯერ არ დაგვიწყია, ავტომატურად დაიწყოს
-            if (gameId === 'tictactoe' && !currentTicTacToeId) {
-                startTicTacToe();
-            }
+            if (gameId === 'tictactoe' && !currentTicTacToeId) startTicTacToe();
         }
 
         // ==============================================
@@ -505,17 +490,10 @@
             document.getElementById('modalText').textContent = text;
             m.className = `modal ${win ? 'win' : 'lose'}`;
             o.classList.add('show');
-
-            // დავაკავშიროთ ღილაკი შესაბამისი თამაშის რესტარტთან
-            const btn = document.getElementById('btnOverlayPlayAgain');
-            btn.onclick = () => {
-                dismissOverlay();
-                restartFunc();
-            };
+            document.getElementById('btnOverlayPlayAgain').onclick = () => { dismissOverlay(); restartFunc(); };
         }
         function hideOverlay() { document.getElementById('overlay').classList.remove('show'); }
         function dismissOverlay() { hideOverlay(); }
-
 
         // ==============================================
         // STARS VS BOMBS LOGIC
@@ -530,9 +508,7 @@
                 if (p.dataset.preset === 'easy') { rowsEl.value = 5; colsEl.value = 5; minesEl.value = 3; }
                 if (p.dataset.preset === 'medium') { rowsEl.value = 6; colsEl.value = 6; minesEl.value = 6; }
                 if (p.dataset.preset === 'hard') { rowsEl.value = 8; colsEl.value = 8; minesEl.value = 10; }
-
-                autoPlayActive = false;
-                newGame();
+                autoPlayActive = false; newGame();
             });
         });
 
@@ -546,10 +522,7 @@
         }
         ['input', 'change'].forEach(evt => [rowsEl, colsEl, minesEl].forEach(el => el.addEventListener(evt, syncBadges)));
 
-        document.getElementById('btnNew').addEventListener('click', () => {
-            autoPlayActive = false;
-            newGame();
-        });
+        document.getElementById('btnNew').addEventListener('click', () => { autoPlayActive = false; newGame(); });
 
         async function newGame() {
             try {
@@ -582,10 +555,7 @@
                     const t = state.board[r][c], el = document.createElement('button');
                     el.className = `cell ${t}${t !== 'hidden' ? ' revealed' : ''}`;
                     el.textContent = t === 'hidden' ? '' : (t === 'bomb' ? '💣' : '⭐');
-                    if (t === 'hidden' && !state.gameOver) el.addEventListener('click', () => {
-                        autoPlayActive = false;
-                        reveal(r, c);
-                    });
+                    if (t === 'hidden' && !state.gameOver) el.addEventListener('click', () => { autoPlayActive = false; reveal(r, c); });
                     else el.disabled = true;
                     board.appendChild(el);
                 }
@@ -609,35 +579,21 @@
 
         document.getElementById('btnAutoPlay').addEventListener('click', async () => {
             if (autoPlayActive) return;
-
-            if (state && state.gameOver) {
-                await newGame();
-                await delay(500);
-            }
-
+            if (state && state.gameOver) { await newGame(); await delay(500); }
             autoPlayActive = true;
             autoPlayTarget = parseInt(document.getElementById('autoClicks').value) || 8;
             await runAutoPlay(0);
         });
 
         async function runAutoPlay(clicksDone) {
-            if (!autoPlayActive || clicksDone >= autoPlayTarget) {
-                autoPlayActive = false;
-                return;
-            }
-
+            if (!autoPlayActive || clicksDone >= autoPlayTarget) { autoPlayActive = false; return; }
             const hiddenCells = [];
             for (let r = 0; r < state.rows; r++) {
                 for (let c = 0; c < state.cols; c++) {
                     if (state.board[r][c] === 'hidden') hiddenCells.push({ r, c });
                 }
             }
-
-            if (hiddenCells.length === 0) {
-                autoPlayActive = false;
-                return;
-            }
-
+            if (hiddenCells.length === 0) { autoPlayActive = false; return; }
             const randomIndex = Math.floor(Math.random() * hiddenCells.length);
             const cell = hiddenCells[randomIndex];
 
@@ -646,18 +602,10 @@
 
             if (state.gameOver) {
                 if (!state.won) {
-                    await delay(1200);
-                    await newGame();
-                    await delay(500);
-                    await runAutoPlay(0);
-                } else {
-                    autoPlayActive = false;
-                }
-            } else {
-                await runAutoPlay(clicksDone + 1);
-            }
+                    await delay(1200); await newGame(); await delay(500); await runAutoPlay(0);
+                } else { autoPlayActive = false; }
+            } else { await runAutoPlay(clicksDone + 1); }
         }
-
 
         // ==============================================
         // TIC-TAC-TOE LOGIC (REAL API)
@@ -666,16 +614,12 @@
 
         async function startTicTacToe() {
             try {
-                // ვუკავშირდებით შენს რეალურ C# კონტროლერს
                 const response = await fetch('/api/tictactoe/new', { method: 'POST' });
                 if (!response.ok) throw new Error("API not responding");
-
                 const data = await response.json();
                 currentTicTacToeId = data.id;
                 renderTicTacToeBoard(data.board, data.winner);
-            } catch (error) {
-                console.error("API Error:", error);
-            }
+            } catch (error) { console.error("API Error:", error); }
         }
 
         function renderTicTacToeBoard(board, winner) {
@@ -685,33 +629,21 @@
             board.forEach((cell, index) => {
                 const btn = document.createElement('button');
                 btn.innerText = cell;
-
-                btn.style.width = '100%';
-                btn.style.aspectRatio = '1/1';
-                btn.style.fontSize = '48px';
-                btn.style.fontWeight = 'bold';
-                btn.style.borderRadius = '15px';
-                btn.style.border = 'none';
-                btn.style.transition = 'all 0.2s';
+                btn.style.width = '100%'; btn.style.aspectRatio = '1/1';
+                btn.style.fontSize = '48px'; btn.style.fontWeight = 'bold';
+                btn.style.borderRadius = '15px'; btn.style.border = 'none'; btn.style.transition = 'all 0.2s';
 
                 if (cell === 'X') {
                     btn.style.background = 'linear-gradient(135deg, #ff416c, #ff4b2b)';
-                    btn.style.color = '#fff';
-                    btn.style.boxShadow = '0 5px 15px rgba(255, 65, 108, 0.4)';
+                    btn.style.color = '#fff'; btn.style.boxShadow = '0 5px 15px rgba(255, 65, 108, 0.4)';
                 } else if (cell === 'O') {
                     btn.style.background = 'linear-gradient(135deg, #41e0ff, #2aa0ff)';
-                    btn.style.color = '#fff';
-                    btn.style.boxShadow = '0 5px 15px rgba(42, 160, 255, 0.4)';
+                    btn.style.color = '#fff'; btn.style.boxShadow = '0 5px 15px rgba(42, 160, 255, 0.4)';
                 } else {
-                    btn.style.background = '#113a80';
-                    btn.style.cursor = winner === '' ? 'pointer' : 'default';
+                    btn.style.background = '#113a80'; btn.style.cursor = winner === '' ? 'pointer' : 'default';
                 }
 
-                // დაკლიკებისას ვიძახებთ API-ს სვლის გასაკეთებლად
-                if (cell === '' && winner === '') {
-                    btn.onclick = () => makeTicTacToeMove(index);
-                }
-
+                if (cell === '' && winner === '') btn.onclick = () => makeTicTacToeMove(index);
                 boardDiv.appendChild(btn);
             });
 
@@ -725,18 +657,21 @@
 
         async function makeTicTacToeMove(index) {
             if (!currentTicTacToeId) return;
-
             try {
-                // ვაგზავნით სვლას (X-ით თამაშობს მომხმარებელი)
                 const response = await fetch(`/api/tictactoe/${currentTicTacToeId}/move?index=${index}&player=X`, { method: 'POST' });
                 if (!response.ok) throw new Error("Move failed");
-
                 const data = await response.json();
-
-                // ვახლებთ UI-ს ბექენდიდან დაბრუნებული ახალი მდგომარეობით (სადაც O-მაც უკვე ითამაშა)
                 renderTicTacToeBoard(data.board, data.winner);
-
-            } catch (error) {
-                console.error("Move Error:", error);
-            }
+            } catch (error) { console.error("Move Error:", error); }
         }
+
+        // ==============================================
+        // INITIALIZATION
+        // ==============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // გვერდის ჩატვირთვისას ავტომატურად ვუშვებთ პირველ თამაშს
+            newGame();
+        });
+    </script>
+</body>
+</html>
