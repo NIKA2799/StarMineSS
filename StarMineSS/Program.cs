@@ -10,6 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddMemoryCache(o => o.SizeLimit = 1024);
 builder.Services.AddSingleton<GameStore>();
 builder.Services.AddSingleton<HighwayStore>();
+builder.Services.AddSingleton<TicTacToeStore>();
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
