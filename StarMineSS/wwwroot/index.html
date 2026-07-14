@@ -530,6 +530,98 @@
                 animation: popStar .28s ease;
             }
 
+        /* ===== Rooster Dash (steps + cash-out) ===== */
+        .balance-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(255,200,87,.14), rgba(100,255,218,.1));
+            border: 1px solid rgba(255,200,87,.35);
+            font-family: var(--font-display);
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .lane-track {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 22px 6px 10px;
+            scrollbar-width: thin;
+        }
+
+        .lane {
+            flex: 0 0 auto;
+            width: 92px;
+            min-height: 96px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            gap: 6px;
+            background: linear-gradient(160deg, #1a2158, #10153a);
+            border: 1px solid rgba(255,255,255,.06);
+            box-shadow: inset 0 6px 16px rgba(0,0,0,.5);
+            position: relative;
+            font-family: var(--font-display);
+            transition: transform .15s ease, filter .2s ease, border-color .2s ease;
+        }
+
+            .lane .mult {
+                font-weight: 800;
+                font-size: 15px;
+                color: var(--muted);
+            }
+
+            .lane.passed {
+                background: linear-gradient(160deg, var(--gold), var(--gold-deep));
+                border-color: rgba(255,255,255,.35);
+                box-shadow: 0 10px 20px rgba(255,159,67,.32);
+            }
+
+                .lane.passed .mult {
+                    color: #1a1206;
+                }
+
+            .lane.current {
+                border-color: var(--cyan);
+                transform: translateY(-4px);
+                box-shadow: 0 0 0 2px rgba(100,255,218,.35), 0 12px 24px rgba(100,255,218,.25);
+            }
+
+            .lane.crashed {
+                background: linear-gradient(160deg, #23283f, #0c0f22);
+                border-color: rgba(255,84,112,.55);
+                box-shadow: 0 0 0 1px rgba(255,84,112,.25) inset;
+                animation: popBomb .38s ease;
+            }
+
+            .lane .rooster-token {
+                position: absolute;
+                top: -26px;
+                font-size: 26px;
+                animation: bob 1s ease-in-out infinite;
+            }
+
+        @keyframes bob {
+            0%,100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        .payout-preview {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 15px;
+            color: var(--cyan);
+            margin: 4px 4px 0;
+        }
+
         @media (max-width:480px) {
             :root {
                 --gap: 6px;
@@ -585,6 +677,7 @@
     <div class="game-selector">
         <button class="switch-btn active" onclick="switchGame('stars-bombs', this)">⭐ Stars vs Bombs</button>
         <button class="switch-btn" onclick="switchGame('tictactoe', this)">❌⭕ Tic-Tac-Toe</button>
+        <button class="switch-btn" onclick="switchGame('highway', this)">🐓 Rooster Dash</button>
     </div>
 
     <div id="game-stars-bombs" class="game-screen">
@@ -643,6 +736,36 @@
             <div class="panel boardWrap" style="max-width: 400px; margin: 20px auto;">
                 <div id="tictactoe-board" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: linear-gradient(180deg,#0c1130,#080b21); padding: 14px; border-radius: 22px;">
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-highway" class="game-screen" style="display: none;">
+        <div class="wrap">
+            <div class="head">
+                <div class="badgeBrand" style="background: linear-gradient(135deg, var(--gold), var(--danger));">🐓</div>
+                <div>
+                    <div class="title">Rooster Dash</div>
+                    <div class="subtitle">დადე ყალბი ფსონი, გადადი ეტაპებზე და გახსენი ბონუსი დროულად — ან წააგე ყველაფერი</div>
+                </div>
+            </div>
+
+            <div class="panel controls">
+                <div class="chip">ფსონი <input id="hwBet" type="number" min="1" max="500" value="10"></div>
+                <div class="chip">ეტაპები <input id="hwSteps" type="number" min="3" max="12" value="8"></div>
+                <button id="hwStartBtn" class="btn">🚀 დაწყება</button>
+                <button id="hwAdvanceBtn" class="btn magic" disabled>➡️ ნაბიჯი</button>
+                <button id="hwCashoutBtn" class="btn" style="background: linear-gradient(135deg, var(--gold), var(--gold-deep)); color:#1a1206;" disabled>💰 ქეშაუთი</button>
+                <div class="right">
+                    <div class="balance-chip">🪙 <span id="hwBalance">1000</span> ყალბი მონეტა</div>
+                </div>
+            </div>
+
+            <div class="status" id="hwStatus">დაადე ფსონი და დაიწყე რბოლა.</div>
+            <div class="payout-preview" id="hwPayoutPreview"></div>
+
+            <div class="panel boardWrap">
+                <div id="hwLaneTrack" class="lane-track"></div>
             </div>
         </div>
     </div>
@@ -949,11 +1072,138 @@
         }
 
         // ==============================================
+        // ROOSTER DASH LOGIC (fake currency, real API)
+        // ==============================================
+        let hwGame = null;
+        const HW_BALANCE_KEY = 'starmine_fake_balance';
+
+        function getHwBalance() {
+            const v = parseFloat(localStorage.getItem(HW_BALANCE_KEY));
+            return Number.isFinite(v) ? v : 1000;
+        }
+        function setHwBalance(v) {
+            localStorage.setItem(HW_BALANCE_KEY, String(v));
+            document.getElementById('hwBalance').textContent = v.toFixed(2);
+        }
+
+        const hwBetEl = document.getElementById('hwBet');
+        const hwStepsEl = document.getElementById('hwSteps');
+        const hwStartBtn = document.getElementById('hwStartBtn');
+        const hwAdvanceBtn = document.getElementById('hwAdvanceBtn');
+        const hwCashoutBtn = document.getElementById('hwCashoutBtn');
+        const hwStatus = document.getElementById('hwStatus');
+        const hwPayoutPreview = document.getElementById('hwPayoutPreview');
+
+        hwStartBtn.addEventListener('click', startHighway);
+        hwAdvanceBtn.addEventListener('click', advanceHighway);
+        hwCashoutBtn.addEventListener('click', cashOutHighway);
+
+        async function startHighway() {
+            const bet = parseFloat(hwBetEl.value) || 0;
+            const steps = parseInt(hwStepsEl.value) || 8;
+            const balance = getHwBalance();
+
+            if (bet <= 0) { hwStatus.textContent = 'ფსონი უნდა იყოს დადებითი რიცხვი.'; return; }
+            if (bet > balance) { hwStatus.textContent = 'არასაკმარისი ბალანსი — შეამცირე ფსონი.'; return; }
+
+            try {
+                const res = await fetch(`/api/highway/new?bet=${bet}&steps=${steps}`, { method: 'POST' });
+                if (!res.ok) throw new Error(await res.text());
+                hwGame = await res.json();
+
+                setHwBalance(balance - bet); // ფსონი გამოიქვითება დაწყებისთანავე
+                hwBetEl.disabled = true; hwStepsEl.disabled = true;
+                hwStartBtn.disabled = true;
+                hwAdvanceBtn.disabled = false;
+                hwCashoutBtn.disabled = true;
+                hwStatus.textContent = 'რბოლა დაიწყო — დააჭირე „ნაბიჯს" გასაგრძელებლად.';
+                hwPayoutPreview.textContent = '';
+                renderHighway();
+            } catch (e) { console.error(e); hwStatus.textContent = 'თამაშის დაწყება ვერ მოხერხდა.'; }
+        }
+
+        async function advanceHighway() {
+            if (!hwGame) return;
+            try {
+                const res = await fetch(`/api/highway/${hwGame.id}/advance`, { method: 'POST' });
+                if (!res.ok) throw new Error(await res.text());
+                hwGame = await res.json();
+                playStar();
+                handleHighwayResult();
+            } catch (e) { console.error(e); }
+        }
+
+        async function cashOutHighway() {
+            if (!hwGame) return;
+            try {
+                const res = await fetch(`/api/highway/${hwGame.id}/cashout`, { method: 'POST' });
+                if (!res.ok) throw new Error(await res.text());
+                hwGame = await res.json();
+                handleHighwayResult();
+            } catch (e) { console.error(e); }
+        }
+
+        function handleHighwayResult() {
+            renderHighway();
+            if (hwGame.status === 'Crashed') {
+                playBomb();
+                hwStatus.textContent = '💥 ჩავარდა! ფსონი დაკარგულია.';
+                resetHighwayControls();
+                showOverlay(false, 'ჩავარდა! 💥', 'როსტერმა ვერ მოასწრო. სცადე ისევ!', resetHighwayForNewRound);
+            } else if (hwGame.status === 'CashedOut') {
+                const balance = getHwBalance();
+                setHwBalance(balance + hwGame.payout);
+                hwStatus.textContent = `✅ ქეშაუთი: +${hwGame.payout.toFixed(2)} მონეტა`;
+                resetHighwayControls();
+                showOverlay(true, 'მოიგე! 🎉', `დაიბრუნე ${hwGame.payout.toFixed(2)} ყალბი მონეტა`, resetHighwayForNewRound);
+            } else {
+                const potential = (hwGame.bet * hwGame.currentMultiplier).toFixed(2);
+                hwPayoutPreview.textContent = `ამ ეტაპზე ქეშაუთი: ${potential} მონეტა (x${hwGame.currentMultiplier})`;
+                hwCashoutBtn.disabled = false;
+            }
+        }
+
+        function resetHighwayControls() {
+            hwAdvanceBtn.disabled = true;
+            hwCashoutBtn.disabled = true;
+        }
+        function resetHighwayForNewRound() {
+            hwGame = null;
+            hwBetEl.disabled = false; hwStepsEl.disabled = false;
+            hwStartBtn.disabled = false;
+            hwStatus.textContent = 'დაადე ფსონი და დაიწყე რბოლა.';
+            hwPayoutPreview.textContent = '';
+            document.getElementById('hwLaneTrack').innerHTML = '';
+        }
+
+        function renderHighway() {
+            const track = document.getElementById('hwLaneTrack');
+            track.innerHTML = '';
+            hwGame.ladder.forEach((m, idx) => {
+                const step = idx + 1;
+                const lane = document.createElement('div');
+                let cls = 'lane';
+                if (hwGame.status === 'Crashed' && step === hwGame.currentStep) cls += ' crashed';
+                else if (step <= hwGame.currentStep) cls += ' passed';
+                lane.className = cls;
+                lane.innerHTML = `<div class="mult">x${m}</div>`;
+                if (step === hwGame.currentStep && hwGame.status === 'Active') {
+                    const token = document.createElement('div');
+                    token.className = 'rooster-token';
+                    token.textContent = '🐓';
+                    lane.appendChild(token);
+                }
+                track.appendChild(lane);
+            });
+        }
+
+        // ==============================================
         // INITIALIZATION
         // ==============================================
         document.addEventListener('DOMContentLoaded', () => {
             // გვერდის ჩატვირთვისას ავტომატურად ვუშვებთ პირველ თამაშს
             newGame();
+            setHwBalance(getHwBalance());
         });
     </script>
 </body>
